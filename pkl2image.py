@@ -98,8 +98,8 @@ pth_out = pth + '/' + 'output/'
 act('mkdir '+pth_out)
 
 xs           = { '50to100': 246300000 , '100to200': 28060000 , '200to300': 1710000 , '300to500': 351300 , '500to700': 31630 , '700to1000': 6802 , '1000to1500': 1206 , '1500to2000': 120.4 , '2000toInf': 25.25 , 'sgn': 3.782 }
-#qcd_cat_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
-qcd_cat_list = ['100to200','200to300']
+qcd_cat_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
+#qcd_cat_list = ['100to200','200to300']
 mass_list    = [20,30,40]#[20,30,40,50]
 ctau_list    = [500,1000,2000]#[500,1000,2000,5000]
 
@@ -146,6 +146,7 @@ for qcd_i in qcd_cat_list:
         (tmp_df[tvt_i]).loc[:,['weight']] = weight_tvt_i
         print weight_tvt_i  
 
+        print '<<<<<', len(tmp_df[tvt_i])  
         qcd_list_dict[tvt_i].append(tmp_df[tvt_i])
 
 
@@ -188,7 +189,10 @@ for i in combi:
 for tvt_i in train_val_test_ratio:
     df_bkg_dict[tvt_i] = pd.concat(qcd_list_dict[tvt_i], ignore_index=True)
     df_sgn_dict[tvt_i] = pd.concat(sgn_list_dict[tvt_i], ignore_index=True)
-   
+
+    print tvt_i+'(bkg): ', str(len(df_bkg_dict[tvt_i]))
+    print tvt_i+'(sgn): ', str(len(df_sgn_dict[tvt_i]))   
+
     output_dict[tvt_i] = pd.concat([df_bkg_dict[tvt_i], df_sgn_dict[tvt_i]], ignore_index=True)
     output_dict[tvt_i] = output_dict[tvt_i].iloc[np.random.permutation(len(output_dict[tvt_i]))]
 
@@ -216,13 +220,8 @@ for i in mass_ctau:
 
 
 for tvt_i in train_val_test_ratio:
-    output_dict[tvt_i].to_hdf( pth_out + 'vbf_qcd-'+tvt_i+'-{0}.h5'.format(version),'table',append=True)
-
-"""
-train.to_hdf( pth_out + 'vbf_qcd-train-{0}.h5'.format(version),'table',append=True)
-test.to_hdf(  pth_out + 'vbf_qcd-test-{0}.h5'.format(version) ,'table',append=True)
-val.to_hdf(   pth_out + 'vbf_qcd-val-{0}.h5'.format(version)  ,'table',append=True)
-"""
+    output_dict[tvt_i].to_hdf( pth_out + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+    print tvt_i + ': ' + str(len( output_dict[tvt_i] ))
 
 
 
