@@ -70,6 +70,7 @@ for qcd_i in qcd_cat_list:
 
 
 ######################################## For signals(similar to background):
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 var_dic         = {}
 var_dic['mass'] = mass_list
 var_dic['ctau'] = ctau_list
@@ -84,8 +85,7 @@ for i in combi:
     sgn_i   = m_i+'_'+l_i
     mass_ctau.append(sgn_i)
     m_c_tpl.append( (m_i,l_i) )
-       
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       
 sub_dic         = {}
 sub_dic['mass'] = mass_sub_list
 sub_dic['ctau'] = ctau_sub_list
@@ -100,7 +100,7 @@ for i in sub_combi:
     sgn_i   = m_i+'_'+l_i
     sub_mass_ctau.append(sgn_i)
     sub_m_c_tpl.append( (m_i,l_i) )
-
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
@@ -130,6 +130,7 @@ for tpl_i in m_c_tpl:
         print weight_tvt_i
  
 
+# Collect signal samples from sub phase space:
 for sgn_i in sub_mass_ctau:
     for tvt_i in train_val_test_ratio:
         sgn_list_dict[tvt_i].append(sgn_df_dict[sgn_i][tvt_i])
@@ -194,12 +195,12 @@ for i in sub_mass_ctau:
 #exit()
 ######################################### Outputs:
 # For training:
-pth_out_train = pth_out + '/' + 'trn/'#'train/'
+pth_out_train = pth_out + '/' + 'train/'
 pth_out_test  = pth_out + '/' + 'test/'
 act('mkdir '+pth_out_train)
 act('mkdir '+pth_out_test)
 for tvt_i in train_val_test_ratio:
-    output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+    #output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
     print tvt_i + ': ' + str(len( output_fortrain_dict[tvt_i] ))
 
 
