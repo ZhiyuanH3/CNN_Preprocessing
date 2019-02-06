@@ -38,10 +38,21 @@ class binary_params:
 # pkl files that store pandas DataFrames #
 ##########################################
 class pkl_df:
-    def __init__(self,pth,fn):
+    def __init__(self,pth,fn): #(self,pth,fn,data_typ)
         self.name    = fn
         self.path    = pth
-        self.df      = joblib.load( self.path + '/' +self.name )  
+        #self.data_typ = data_typ
+        #if self.data_typ == 'h5':
+        #    store        = pd.HDFStore(self.path + '/' +self.name)
+        #    self.df      = store.select('table')
+        #elif self.data_typ = 'pkl':  
+        if   '.h5'  in self.name:
+            self.df      = pd.read_hdf(self.path + '/' +self.name, 'df') #'df' is the key
+        elif '.pkl' in self.name:
+            self.df      = joblib.load( self.path + '/' +self.name )  
+        
+        #self.df      = (self.df).dropna()  
+        
         firstColName = (self.df).columns.values[0]
         dropone      = (self.df)[firstColName] != -1
         self.df      = (self.df)[dropone]
