@@ -197,8 +197,8 @@ def run_nn_i(inName):
     print pan[:8]
     print 'Events: ', len(pan[:])
     
-    pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=True)
-
+    #pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=True)
+    pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_skimed'+'.h5', key='df', mode='w', dropna=True)
 
 
 def run_bdt_i(inName):
@@ -241,8 +241,8 @@ def run_bdt_i(inName):
     print len(df)
 
     pan = df
-    pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=True)
-
+    #pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=True)
+    pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_skimed'+'.h5', key='df', mode='w', dropna=True)
 
 
 

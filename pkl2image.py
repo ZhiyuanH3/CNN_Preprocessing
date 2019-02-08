@@ -201,7 +201,7 @@ pth_out_test  = pth_out + '/' + 'test/'
 act('mkdir '+pth_out_train)
 act('mkdir '+pth_out_test)
 for tvt_i in train_val_test_ratio:
-    output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+    #output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
     print tvt_i + ': ' + str(len( output_fortrain_dict[tvt_i] ))
 
 
@@ -210,7 +210,7 @@ for sgn_i in mass_ctau:
     pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
     act('mkdir '+pth_out_test_i)
     for tvt_i in train_val_test_ratio:
-        output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+        #output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
         print sgn_i + '/' + tvt_i + ': ' + str(len( output_fortest_dict[sgn_i][tvt_i] ))
 
 
