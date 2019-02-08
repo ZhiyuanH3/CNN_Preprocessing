@@ -8,7 +8,8 @@ from Tools             import combi_index
 from DataTypes        import pkl_df
 
 #version = 0 
-pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/large_sgn/'
+#pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/large_sgn/'
+pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'
 pth_out = pth + '/' + 'output/'
 act('mkdir '+pth_out)
 
@@ -39,12 +40,12 @@ output_fortest_dict    = {}
 ######################################## For backgrounds:
 tot_xs      = 0
 for qcd_i in qcd_cat_list:
-    key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1_1j_skimed.pkl'
+    key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1_1j_skimed'+'.h5'#'.pkl'
     inst_tmp           = pkl_df(pth,key_i) # Create instance
     qcd_dict[qcd_i]    = inst_tmp # Dictionary that stores the instances with various HT bin
     qcd_df_dict[qcd_i] = {}
 
-    inst_tmp.shift_col_num(-1) # Column starts with 'E_0'
+    #inst_tmp.shift_col_num(-1) # Column starts with 'E_0'
  
     inst_tmp.set_xs( xs[qcd_i] ) # Set cross-sections
     tot_xs            += xs[qcd_i] # Calculate total cross-section
@@ -112,12 +113,12 @@ for tpl_i in m_c_tpl:
     m_i = tpl_i[0]
     l_i = tpl_i[1] 
     sgn_i = m_i + '_' + l_i
-    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_1j_skimed.pkl'
+    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_1j_skimed'+'.h5'#'.pkl'
     inst_tmp            = pkl_df(pth,key_i)
     sgn_dict[sgn_i]     = inst_tmp
     sgn_df_dict[sgn_i]  = {}
      
-    inst_tmp.shift_col_num(-1)
+    #inst_tmp.shift_col_num(-1)
 
     inst_tmp.set_label(1, label_str)
     tmp_df_dict         = inst_tmp.split(train_val_test_ratio)
@@ -200,7 +201,7 @@ pth_out_test  = pth_out + '/' + 'test/'
 act('mkdir '+pth_out_train)
 act('mkdir '+pth_out_test)
 for tvt_i in train_val_test_ratio:
-    #output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+    output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
     print tvt_i + ': ' + str(len( output_fortrain_dict[tvt_i] ))
 
 
@@ -209,7 +210,7 @@ for sgn_i in mass_ctau:
     pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
     act('mkdir '+pth_out_test_i)
     for tvt_i in train_val_test_ratio:
-        #output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+        output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
         print sgn_i + '/' + tvt_i + ': ' + str(len( output_fortest_dict[sgn_i][tvt_i] ))
 
 
