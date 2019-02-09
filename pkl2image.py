@@ -9,9 +9,11 @@ from DataTypes        import pkl_df
 
 #version = 0 
 #pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/large_sgn/'
-pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'
+pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'+'2jets/'
 pth_out = pth + '/' + 'output/'
 act('mkdir '+pth_out)
+
+jet_str      = '2j'#'1j'
 
 xs           = { '50to100': 246300000 , '100to200': 28060000 , '200to300': 1710000 , '300to500': 351300 , '500to700': 31630 , '700to1000': 6802 , '1000to1500': 1206 , '1500to2000': 120.4 , '2000toInf': 25.25 , 'sgn': 3.782 }
 qcd_cat_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
@@ -40,7 +42,7 @@ output_fortest_dict    = {}
 ######################################## For backgrounds:
 tot_xs      = 0
 for qcd_i in qcd_cat_list:
-    key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1_1j_skimed'+'.h5'#'.pkl'
+    key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1_'+jet_str+'_skimed'+'.h5'#'.pkl'
     inst_tmp           = pkl_df(pth,key_i) # Create instance
     qcd_dict[qcd_i]    = inst_tmp # Dictionary that stores the instances with various HT bin
     qcd_df_dict[qcd_i] = {}
@@ -113,7 +115,7 @@ for tpl_i in m_c_tpl:
     m_i = tpl_i[0]
     l_i = tpl_i[1] 
     sgn_i = m_i + '_' + l_i
-    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_1j_skimed'+'.h5'#'.pkl'
+    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_'+jet_str+'_skimed'+'.h5'#'.pkl'
     inst_tmp            = pkl_df(pth,key_i)
     sgn_dict[sgn_i]     = inst_tmp
     sgn_df_dict[sgn_i]  = {}
@@ -151,6 +153,9 @@ for tvt_i in train_val_test_ratio:
     df_bkg_dict[tvt_i] = pd.concat(qcd_list_dict[tvt_i], ignore_index=True)
     # Combine all signals from the given subset of phase space:
     df_sgn_dict[tvt_i] = pd.concat(sgn_list_dict[tvt_i], ignore_index=True)
+
+    df_sgn_dict[tvt_i]['weight'] = 1. / float( df_sgn_dict[tvt_i].shape[0] )
+
     print tvt_i+'(bkg): ', str(len(df_bkg_dict[tvt_i]))
     print tvt_i+'(sgn): ', str(len(df_sgn_dict[tvt_i]))   
     # Mix and shuffle signal and background:
@@ -201,7 +206,7 @@ pth_out_test  = pth_out + '/' + 'test/'
 act('mkdir '+pth_out_train)
 act('mkdir '+pth_out_test)
 for tvt_i in train_val_test_ratio:
-    #output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+    output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
     print tvt_i + ': ' + str(len( output_fortrain_dict[tvt_i] ))
 
 
@@ -210,7 +215,7 @@ for sgn_i in mass_ctau:
     pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
     act('mkdir '+pth_out_test_i)
     for tvt_i in train_val_test_ratio:
-        #output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
+        output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
         print sgn_i + '/' + tvt_i + ': ' + str(len( output_fortest_dict[sgn_i][tvt_i] ))
 
 

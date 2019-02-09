@@ -21,7 +21,7 @@ versionN_s  = 'TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'
 #cut_on      = 1
 #newFileName = ''
 #drop_nan    = 1
-leading_jet = 1
+leading_jet = 1#0#1
 if leading_jet:    jet_idx = 0 # >>>>>>>>>>>>>> leading jet
 else          :    jet_idx = 1 # >>>>>>>>>>>>>> the 2nd jet
 
