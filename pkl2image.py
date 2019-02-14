@@ -9,11 +9,16 @@ from DataTypes        import pkl_df
 
 #version = 0 
 #pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/large_sgn/'
-pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'+'2jets/'
-pth_out = pth + '/' + 'output/'
+#pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'+'2jets/'
+pth_root = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/'
+#jet_mode = '2jets'
+jet_mode = 'leading_jet'
+pth      = pth_root + 'raw/'       + jet_mode + '/' 
+pth_out  = pth_root + 'nn_format/' + jet_mode + '/'
 act('mkdir '+pth_out)
 
-jet_str      = '2j'#'1j'
+if   jet_mode == '2jets'      :    jet_str = '2j' 
+elif jet_mode == 'leading_jet':    jet_str = 'j0_pfc'
 
 xs           = { '50to100': 246300000 , '100to200': 28060000 , '200to300': 1710000 , '300to500': 351300 , '500to700': 31630 , '700to1000': 6802 , '1000to1500': 1206 , '1500to2000': 120.4 , '2000toInf': 25.25 , 'sgn': 3.782 }
 qcd_cat_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']

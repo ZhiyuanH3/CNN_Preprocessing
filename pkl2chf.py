@@ -9,8 +9,10 @@ from DataTypes         import pkl_df
 
 #version = 0 
 #pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/large_sgn/'+'with_chf/'+'h5s/'
-pth = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_forBDT/'+'h5s/'
-pth_out = pth + '/' + 'output/'
+#pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_forBDT/'+'h5s/'
+pth_root = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/'
+pth      = pth_root + 'raw/' + '2jets/' + 'hla/'
+pth_out  = pth_root + '/' + 'bdt_format/'#'output/'
 act('mkdir '+pth_out)
 
 xs           = { '50to100': 246300000 , '100to200': 28060000 , '200to300': 1710000 , '300to500': 351300 , '500to700': 31630 , '700to1000': 6802 , '1000to1500': 1206 , '1500to2000': 120.4 , '2000toInf': 25.25 , 'sgn': 3.782 }
@@ -21,6 +23,8 @@ ctau_list            = [500,1000,2000,5000]
 mass_sub_list        = [20,30,40]
 ctau_sub_list        = [500,1000,2000]
 label_str            = 'is_signal_new'
+#tail_str             = '_j0_hla_skimed'#'_1j_skimed'
+tail_str             = '_2j_skimed'  
 train_val_test_ratio = {'train':0.6,'val':0.2,'test':0.2}
 
 qcd_dict      = {}
@@ -40,7 +44,7 @@ output_fortest_dict    = {}
 ######################################## For backgrounds:
 tot_xs      = 0
 for qcd_i in qcd_cat_list:
-    key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1_1j_skimed'+'.h5'#'.pkl'
+    key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1'+tail_str+'.h5'#'.pkl'
     inst_tmp           = pkl_df(pth,key_i) # Create instance
     qcd_dict[qcd_i]    = inst_tmp # Dictionary that stores the instances with various HT bin
     qcd_df_dict[qcd_i] = {}
@@ -115,7 +119,7 @@ for tpl_i in m_c_tpl:
     m_i = tpl_i[0]
     l_i = tpl_i[1] 
     sgn_i = m_i + '_' + l_i
-    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_1j_skimed'+'.h5'#'.pkl'
+    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'+tail_str+'.h5'#'.pkl'
     inst_tmp            = pkl_df(pth,key_i)
     sgn_dict[sgn_i]     = inst_tmp
     sgn_df_dict[sgn_i]  = {}
