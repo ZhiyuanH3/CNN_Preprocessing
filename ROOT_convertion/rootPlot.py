@@ -5,34 +5,35 @@ import numpy          as np
 import pandas         as pd
 from   ROOT              import TFile
 from   sklearn.externals import joblib
+
+from   matplotlib        import pyplot as plt
+import matplotlib.colors as colors
+
+color_lst = list(colors._colors_full_map.values())
 #################
 # settings      #
 #################
 #-------------------------------------------------------------------------------------------------------------------------
-sgn_on      = True
-bkg_on      = True
-
-bdt_mode    = True#False
-lola_mode   = True
+sgn_on = 1
+bkg_on = 1
 
 path        = '/beegfs/desy/user/hezhiyua/backed/fromLisa/fromBrianLLP/'
-Npfc        = 400#2#40
+Npfc        = 400#2#400#40
 #path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_forBDT/' 
-#path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'
-path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/raw/'
+path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'
 versionN_b  = 'TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1'
 versionN_s  = 'TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'
-cut_on      = 1
+#cut_on      = 1
 #newFileName = ''
-drop_nan    = True
+#drop_nan    = 1
 leading_jet = 1#0#1
-
-
 if leading_jet:    jet_idx = 0 # >>>>>>>>>>>>>> leading jet
 else          :    jet_idx = 1 # >>>>>>>>>>>>>> the 2nd jet
+
 qcd_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
 m_list   = [20,30,40,50]
 l_list   = [500,1000,2000,5000] 
+
 ftr_dict = {'jetIndex': 'jetIndex',
             'pt'      : 'pt', 
             'energy'  : 'E', 
@@ -153,8 +154,7 @@ def run_nn_i(inName):
     
     if is_sgn: msk = mask_sgn
     else     : msk = mask_bkg 
- 
-    if cut_on: df  = df[msk]
+    df       = df[msk]
     print len(df)
     #print df[:20]
     df.drop(cut_lst,axis=1)
@@ -167,7 +167,21 @@ def run_nn_i(inName):
         df_dict[a] = df_dict[a][msk_jet]
     df_pt_rank    = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False)
     pt_rank       = df_pt_rank.copy()
+
+
+
     #print pt_rank
+    df_count =  pt_rank.count(axis='columns')
+    #print df_count
+    nt_list  = df_count.values.tolist()
+    #print nt_list
+    n_events = len(df_count)
+    #print n_events
+
+
+    #exit()
+
+    """
     n_col            = pt_rank.shape[1]
     order_pt         = pt_rank.apply(lambda row: ordering(row, n_col), axis=1)
     order_df         = pd.DataFrame.from_records( order_pt.values.tolist() )
@@ -198,19 +212,29 @@ def run_nn_i(inName):
     for i in range(Npfc):
         pan['H'+'_'+str(i)] = pan['PID'+'_'+str(i)].apply(pick_h)
 
-    pan['CHF']              = pan.apply(calc_chf, axis=1)
+    #pan['CHF']   = pan.apply(calc_chf, axis=1)
     print pan[:8]
     print 'Events: ', len(pan[:])
     
-    #pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
-    pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_pfc_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
+    #pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_skimed'+'.h5', key='df', mode='w', dropna=True)
+    """
+
+    plt.hist(nt_list, bins, alpha=0.5, color=color_lst[ci], label=label_i, normed=True)
+
+
+
+
+
+
+
 
 
 def run_bdt_i(inName):
 
     print inName
     pre_str  = 'Jets['+str(jet_idx)+']'
-    attr_lst = ['cHadEFrac','nHadEFrac','cHadMulti','nHadMulti','npr','pt','eta','isGenMatched']
+    #attr_lst = ['cHadEFrac','nHadEFrac','cHadMulti','nHadMulti','npr','pt','eta','isGenMatched']
+    attr_lst = ['pt','eta','isGenMatched','npr']
     if 'QCD' in inName:    is_sgn = 0
     else              :    is_sgn = 1
     f1       = TFile(path + inName, 'r')
@@ -246,25 +270,44 @@ def run_bdt_i(inName):
     print len(df)
 
     pan = df
+
+    np_lst  = df['npr'].values.tolist()
+    plt.hist(np_lst, bins, alpha=0.5, color=color_lst[ci], label=label_i, normed=True)
     
-    pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_hla_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
+    #print pan
+    #pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_skimed'+'.h5', key='df', mode='w', dropna=True)
 
 
 
+ci   = 0 
+bins = np.linspace(0,130,40) 
+plt.title('Number of jet constituents')
+plt.xlabel('number of PFCs per jet')
+plt.ylabel('a.u.')
 
+#"""
 if sgn_on:
     for m_i in m_list:
         for l_i in l_list:
+
+            label_i = 'VBF_'+ str(m_i) + 'GeV_' + str(l_i) + 'mm'
             in_name = 'VBFH_HToSSTobbbb_MH-125_MS-' + str(m_i) + '_ctauS-' + str(l_i) + '_' + versionN_s + '.root'
-            if bdt_mode :    run_bdt_i(in_name)
-            if lola_mode:    run_nn_i(in_name)    
+            #run_bdt_i(in_name)
+            run_nn_i(in_name)    
+            ci += 1
+"""
 if bkg_on:
     for qcd_i in qcd_list:
+        
+        label_i = 'QCD_HT'+qcd_i   
         in_name = 'QCD_HT'+qcd_i+'_'+versionN_b+'.root'
-        if bdt_mode :    run_bdt_i(in_name)
-        if lola_mode:    run_nn_i(in_name)
+        #run_bdt_i(in_name)
+        run_nn_i(in_name)
+        ci += 1
+"""
 
-
+plt.legend()
+plt.show()
 
 
 
