@@ -89,9 +89,10 @@ def calc_chf(row):
     tot_e = 0
     che   = 0
     for i in range(Npfc):
-        tot_e += row['E_'+str(1)] 
-        ch_i   = pick_ch( row['PID_'+str(1)] )
-        che   += row[e_i] * ch_i
+        e_i    = row['E_'+str(i)]
+        tot_e += e_i 
+        ch_i   = pick_ch( row['PID_'+str(i)] )
+        che   += e_i * ch_i
     return che / float(tot_e)
 
 
