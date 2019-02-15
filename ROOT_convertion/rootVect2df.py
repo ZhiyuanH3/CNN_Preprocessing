@@ -12,20 +12,18 @@ from   sklearn.externals import joblib
 sgn_on      = True
 bkg_on      = True
 
-bdt_mode    = True#False
+bdt_mode    = False
 lola_mode   = True
 
 path        = '/beegfs/desy/user/hezhiyua/backed/fromLisa/fromBrianLLP/'
 Npfc        = 400#2#40
-#path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_forBDT/' 
-#path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'
 path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/raw/'
 versionN_b  = 'TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1'
 versionN_s  = 'TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'
-cut_on      = 1
+cut_on      = True
 #newFileName = ''
 drop_nan    = True
-leading_jet = 0#1#0#1
+leading_jet = True#1#0
 
 
 if leading_jet:    jet_idx = 0 # >>>>>>>>>>>>>> leading jet
@@ -116,7 +114,7 @@ def run_nn_i(inName):
     attr_lst     = ['jetIndex','pt','energy','px','py','pz','isTrack','pdgId']
     pre_str      = 'PFCandidates'    
     cut_pre_str  = 'Jets['+str(jet_idx)+']'
-    cut_attr_lst = ['pt','eta','isGenMatched']
+    cut_attr_lst = ['pt','eta','isGenMatched'    ,'cHadEFrac','nHadEFrac','cHadMulti','nHadMulti','npr']
 
     if 'QCD' in inName:    is_sgn = 0
     else              :    is_sgn = 1
@@ -143,31 +141,30 @@ def run_nn_i(inName):
     for i in cut_lst:    df[i] = df_s[i]
     for i in ftr_lst:    df[i] = df_s[i]
     for i in cut_lst:    df[i] = df[i].apply(pick_ele)
+
     #if drop_nan:    df = df.dropna()
-    #print len(df)
-    #print df[:20]
     mask_pt  = df[cut_pre_str+'.'+'pt'] > 15
     mask_eta = (df[cut_pre_str+'.'+'eta'] > -2.4) & (df[cut_pre_str+'.'+'eta'] < 2.4)
     mask_mtc = df[cut_pre_str+'.'+'isGenMatched'] == 1
     mask_bkg = mask_pt & mask_eta
     mask_sgn = mask_bkg & mask_mtc
     
+    print df.shape
+
     if is_sgn: msk = mask_sgn
     else     : msk = mask_bkg 
  
     if cut_on: df  = df[msk]
-    print len(df)
-    #print df[:20]
-    df.drop(cut_lst,axis=1)
+    print df.shape
+    #df.drop(cut_lst,axis=1)
 
-    
-    df_dict       = {}
-    for a in ftr_lst:
-        df_dict[a] = pd.DataFrame.from_records( df[a].values.tolist() )
-        msk_jet    = df_dict[pre_str+'.'+'jetIndex']     == jet_idx # >>>> 0:leading jet
-        df_dict[a] = df_dict[a][msk_jet]
-    df_pt_rank    = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False)
-    pt_rank       = df_pt_rank.copy()
+    df_dict        = {}
+    for a in ftr_lst:    df_dict[a] = pd.DataFrame.from_records( df[a].values.tolist() )
+    msk_jet = df_dict[pre_str+'.'+'jetIndex'] == jet_idx 
+    for a in ftr_lst:    df_dict[a] = df_dict[a][msk_jet]
+
+    df_pt_rank       = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False)
+    pt_rank          = df_pt_rank.copy()
     #print pt_rank
     n_col            = pt_rank.shape[1]
     order_pt         = pt_rank.apply(lambda row: ordering(row, n_col), axis=1)
@@ -183,6 +180,9 @@ def run_nn_i(inName):
         elif a == pre_str+'.'+'pdgId':
             def_val = -1
             df_typ  = int
+        elif a == pre_str+'.'+'jetIndex':
+            def_val = -1
+            df_typ  = int
         else             :
             def_val = 0
             df_typ  = float
@@ -191,7 +191,7 @@ def run_nn_i(inName):
         df_ord[a]    = pd.DataFrame.from_records( df_ord_list.values.tolist() )
         tmp_df_ord   = df_ord[a].astype(df_typ)
         pan_list.append(tmp_df_ord)
-    #print df_ord['pt'][:8]
+    
     pan         = pd.concat(pan_list, axis=1)
     colN        = colm_gen(ftr_lst, Npfc)
     pan.columns = colN
@@ -200,9 +200,13 @@ def run_nn_i(inName):
         pan['H'+'_'+str(i)] = pan['PID'+'_'+str(i)].apply(pick_h)
 
     pan['CHF']              = pan.apply(calc_chf, axis=1)
+    xxx                     = df[cut_pre_str+'.'+'cHadEFrac'].reset_index()
+    pan['cHadEFrac']        = xxx[cut_pre_str+'.'+'cHadEFrac']
+
     print pan[:8]
     print 'Events: ', len(pan[:])
-    
+    #print pan[['CHF','cHadEFrac']]
+
     #pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
     pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_pfc_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
 
@@ -229,12 +233,8 @@ def run_bdt_i(inName):
 
     df = pd.DataFrame()
     for i in attr_lst:    df[i] = df_dict[i]
-
-    for i in attr_lst:
-        df[i] = df[i].apply(pick_ele) 
-        #print df[i][:12]
+    for i in attr_lst:    df[i] = df[i].apply(pick_ele) 
     #if drop_nan:    df = df.dropna()
-    #print len(df)
     mask_pt  = df['pt'] > 15
     mask_eta = (df['eta'] > -2.4) & (df['eta'] < 2.4)
     mask_mtc = df['isGenMatched'] == 1
@@ -247,7 +247,7 @@ def run_bdt_i(inName):
     print len(df)
 
     pan = df
-    
+    #print pan[:8]
     pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_hla_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
 
 
