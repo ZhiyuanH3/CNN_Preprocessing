@@ -56,10 +56,19 @@ def ordering(x, n_col):
     ord_dic = {}
     for i in xrange(n_col):
         if x[i] <= Npfc:    ord_dic[x[i]] = i
+
+    max_rank = max(list(ord_dic))
     cc = 1
-    for key, item in ord_dic.iteritems():
-        if cc == key:    order.append(item)
-        cc += 1
+    while cc <= max_rank:
+        for key, item in ord_dic.iteritems():
+            if cc == key:
+                order.append(item)
+                cc += 1
+                break
+    #for key, item in ord_dic.iteritems():
+    #    if cc == key:   
+    #        order.append(item)
+    #        cc += 1
     leng = len(order)
     if leng < Npfc:    order = order + (Npfc-leng)*[-1]
     return order
@@ -165,7 +174,7 @@ def run_nn_i(inName):
         df_dict[a] = pd.DataFrame.from_records( df[a].values.tolist() )
         msk_jet    = df_dict[pre_str+'.'+'jetIndex']     == jet_idx # >>>> 0:leading jet
         df_dict[a] = df_dict[a][msk_jet]
-    df_pt_rank    = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False)
+    df_pt_rank    = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False, method='first')
     pt_rank       = df_pt_rank.copy()
 
 

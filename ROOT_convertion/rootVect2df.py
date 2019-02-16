@@ -23,7 +23,7 @@ versionN_s  = 'TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'
 cut_on      = True
 #newFileName = ''
 drop_nan    = True
-leading_jet = True#1#0
+leading_jet = True#False#True
 
 
 if leading_jet:    jet_idx = 0 # >>>>>>>>>>>>>> leading jet
@@ -53,10 +53,21 @@ def ordering(x, n_col):
     ord_dic = {}
     for i in xrange(n_col):
         if x[i] <= Npfc:    ord_dic[x[i]] = i
+
+    max_rank = max(list(ord_dic))
+
     cc = 1
-    for key, item in ord_dic.iteritems():
-        if cc == key:    order.append(item)
-        cc += 1
+    while cc <= max_rank:
+        for key, item in ord_dic.iteritems():
+            if cc == key:
+                order.append(item)
+                cc += 1
+                break
+    #cc = 1
+    #for key, item in ord_dic.iteritems():
+    #    if cc == key:    order.append(item)
+    #    cc += 1
+
     leng = len(order)
     if leng < Npfc:    order = order + (Npfc-leng)*[-1]
     return order
@@ -72,17 +83,17 @@ def pick_top(x, default_val):
 
 
 
-def pick_ch(df):
-    if (df != 211) & (df != -211) & (df != 130):    return 0#-1
-    elif (df == 211) | (df == -211)            :    return 1
-    elif (df == 130)                           :    return 0
+#def pick_ch(df):
+#    if (df != 211) & (df != -211) & (df != 130):    return 0#-1
+#    elif (df == 211) | (df == -211)            :    return 1
+#    elif (df == 130)                           :    return 0
 
-def pick_h(df):
-    if (df != 211) & (df != -211) & (df != 130):    return 0#-1
-    else                                       :    return 1
+#def pick_h(df):
+#    if (df != 211) & (df != -211) & (df != 130):    return 0#-1
+#    else                                       :    return 1
 
 
-
+"""
 def calc_chf(row):
     tot_e = 0
     che   = 0
@@ -92,6 +103,23 @@ def calc_chf(row):
         ch_i   = pick_ch( row['PID_'+str(i)] )
         che   += e_i * ch_i
     return che / float(tot_e)
+"""
+
+def pick_h(df):
+    if ( np.abs(df) > 100 ) & ( np.abs(df) != 310 ):    return 1
+    else                                           :    return 0 
+
+def calc_chf(row):
+    tot_e = 0
+    che   = 0
+    for i in range(Npfc):
+        e_i    = row['E_'+str(i)]
+        tot_e += e_i
+        c_i    = row['C_'+str(i)]   
+        h_i    = pick_h( row['PID_'+str(i)] )
+        che   += e_i * c_i * h_i
+    return che / float(tot_e)
+
 
 
 
@@ -163,7 +191,7 @@ def run_nn_i(inName):
     msk_jet = df_dict[pre_str+'.'+'jetIndex'] == jet_idx 
     for a in ftr_lst:    df_dict[a] = df_dict[a][msk_jet]
 
-    df_pt_rank       = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False)
+    df_pt_rank       = df_dict[pre_str+'.'+'pt'].rank(axis=1, ascending=False, method='first')
     pt_rank          = df_pt_rank.copy()
     #print pt_rank
     n_col            = pt_rank.shape[1]
@@ -205,7 +233,7 @@ def run_nn_i(inName):
 
     print pan[:8]
     print 'Events: ', len(pan[:])
-    #print pan[['CHF','cHadEFrac']]
+    print pan[['CHF','cHadEFrac']]
 
     #pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
     pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_pfc_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
