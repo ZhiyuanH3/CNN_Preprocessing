@@ -125,19 +125,18 @@ df_sgn_dict = pd.concat(sgn_list, ignore_index=True)
 print '(bkg): ', str(len(df_bkg_dict))
 print '(sgn): ', str(len(df_sgn_dict))   
 # Mix and shuffle signal and background:
-#output_fortrain_dict = pd.concat([df_bkg_dict, df_sgn_dict], ignore_index=True)
-#output_fortrain_dict = output_fortrain_dict.iloc[np.random.permutation(len(output_fortrain_dict))]
+output_fortrain_dict = pd.concat([df_bkg_dict, df_sgn_dict], ignore_index=True)
+output_fortrain_dict = output_fortrain_dict.iloc[np.random.permutation(len(output_fortrain_dict))]
 #"""
 
 #####################################################
 # This generates the datasets for testing the Model #
 #####################################################
 # Generate all train/val/test samples:
-"""
 for sgn_i in mass_ctau:
     output_fortest_dict[sgn_i] = pd.concat([df_bkg_dict, sgn_df_dict[sgn_i] ], ignore_index=True)
     output_fortest_dict[sgn_i] = output_fortest_dict[sgn_i].iloc[np.random.permutation(len(output_fortest_dict[sgn_i]))]
-"""
+
 
 
 
@@ -160,14 +159,12 @@ act('mkdir '+pth_out_test)
 #print str(len( output_fortrain_dict ))
 
 # For testing:
-df_bkg_dict.to_hdf(pth_out+'qcd_'+v_str+'.h5', key='df', mode='w', dropna=False)
-
 for sgn_i in mass_ctau:
     pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
     act('mkdir '+pth_out_test_i)
     #output_fortest_dict[sgn_i].to_hdf(pth_out_test_i + 'vbf_qcd_'+v_str+'.h5','table',append=False)
-    sgn_df_dict[sgn_i].to_hdf(pth_out_test_i+'vbf_'+sgn_i+'_'+v_str+'.h5', key='df', mode='w', dropna=False)
-    print 'num of events for ' + sgn_i + ': ' + str(len( sgn_df_dict[sgn_i] ))
+    output_fortest_dict[sgn_i].to_hdf(pth_out_test_i+'vbf_qcd_'+v_str+'.h5', key='df', mode='w', dropna=False)
+    print 'num of events for ' + sgn_i + ': ' + str(len( output_fortest_dict[sgn_i] ))
 
 
 

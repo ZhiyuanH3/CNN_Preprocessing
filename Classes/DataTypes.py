@@ -1,6 +1,8 @@
-import pandas          as pd
-from sklearn.externals import joblib
-from datetime          import datetime  
+import numpy                 as np
+import pandas                as pd
+from   sklearn.externals import joblib
+from   datetime          import datetime  
+
 
 ###########################################
 # Parameters for the classification study #
@@ -103,16 +105,28 @@ class pkl_df:
         self.df_test[weight_str]  = weight['test']
 
 
-    """
-    def CVsplit(self,n_fold):
-        df_dict           = {}
-        df = self.df 
-        for i in range(n_fold):
-            df.iloc[:] 
+    def splitN(self,n_fold):
+        df_bkg_dic     = {}  
+        k_fold_bkg_dic = {i:[] for i in range(n_fold)} 
+        k_fold_bkg     = []         
 
-        self.n_fold      = n_fold
-        return df_dict
-    """
+        df         = self.df 
+        df_bkg     = df[df['is_signal_new']==0]
+        df_sgn     = df[df['is_signal_new']==1] 
+        qcd_n_dic  = dict(df_bkg.groupby('xs').size() )        
+       
+        for key, item in qcd_n_dic.iteritems():
+            print '#events for xs=', key, ': ', item 
+            tmp_df = df_bkg[df_bkg['xs']==key]
+            #batch_size = int(item / float(n_fold))
+            df_bkg_dic[key] = np.array_split(tmp_df, n_fold)   
+            for i in range(n_fold):    k_fold_bkg_dic[i].append( df_bkg_dic[key][i] )
+                
+        k_fold_sgn          = np.array_split(df_sgn, n_fold) 
+        for i in range(n_fold):    k_fold_bkg.append( pd.concat(k_fold_bkg_dic[i]) )
+        
+        return k_fold_sgn, k_fold_bkg
+
 
 
 
