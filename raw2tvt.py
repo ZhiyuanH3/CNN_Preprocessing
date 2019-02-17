@@ -7,9 +7,7 @@ sys.path.append('./Classes/')
 from Tools             import combi_index
 from DataTypes        import pkl_df
 
-#version = 0 
-#pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/large_sgn/'
-#pth     = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/Skim/fromBrian_for2d/pfc_400/raw/'+'2jets/'
+v_str    = 'all'
 pth_root = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/'
 #jet_mode = '2jets'
 jet_mode = 'leading_jet'
@@ -27,17 +25,14 @@ ctau_list            = [500,1000,2000,5000]
 mass_sub_list        = [20,30,40]
 ctau_sub_list        = [500,1000,2000]
 label_str            = 'is_signal_new'
-train_val_test_ratio = {'train':0.6,'val':0.2,'test':0.2}
+#train_val_test_ratio = {'train':0.6,'val':0.2,'test':0.2}
 
 qcd_dict      = {}
 qcd_df_dict   = {}
-qcd_list_dict = {}
+qcd_list      = []
 sgn_dict      = {}
 sgn_df_dict   = {}
-sgn_list_dict = {}
-for tvt_i in train_val_test_ratio:
-    sgn_list_dict[tvt_i] = []
-    qcd_list_dict[tvt_i] = []
+sgn_list      = []
 df_bkg_dict            = {}
 df_sgn_dict            = {}
 output_fortrain_dict   = {}
@@ -49,30 +44,14 @@ for qcd_i in qcd_cat_list:
     key_i              = 'QCD_HT'+qcd_i+'_TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1_'+jet_str+'_skimed'+'.h5'#'.pkl'
     inst_tmp           = pkl_df(pth,key_i) # Create instance
     qcd_dict[qcd_i]    = inst_tmp # Dictionary that stores the instances with various HT bin
-    qcd_df_dict[qcd_i] = {}
-
+    qcd_df_dict[qcd_i] = inst_tmp.df
     #inst_tmp.shift_col_num(-1) # Column starts with 'E_0'
- 
     inst_tmp.set_xs( xs[qcd_i] ) # Set cross-sections
     tot_xs            += xs[qcd_i] # Calculate total cross-section
     inst_tmp.set_label(0, label_str) # Set the 'is_signal_new' column value
-    tmp_df_dict        = inst_tmp.split(train_val_test_ratio) # Split the dataframe into train/val/test sections
-    for tvt_i in train_val_test_ratio:
-        qcd_df_dict[qcd_i][tvt_i] = tmp_df_dict[tvt_i]
-        qcd_df_dict[qcd_i][tvt_i] = qcd_df_dict[qcd_i][tvt_i].assign(weight=0) # Create 'weight' column
-
-############################ Set weights:
-for qcd_i in qcd_cat_list:
-    tmpt         = qcd_dict[qcd_i]
-    tmp_df       = qcd_df_dict[qcd_i]
-    for tvt_i in train_val_test_ratio:
-        weight_tvt_i                      = tmpt.xs / float( tot_xs * tmpt.read_n(tvt_i) ) # Calculate weights
-        (tmp_df[tvt_i]).loc[:,['weight']] = weight_tvt_i # Set 'weight' column
-        print weight_tvt_i  
-        ##################################### Collect badkgrounds from all HT bins:   
-        print '<<<<<', len(tmp_df[tvt_i])  
-        qcd_list_dict[tvt_i].append(tmp_df[tvt_i])
-
+    ##################################### Collect badkgrounds from all HT bins:   
+    qcd_list.append(inst_tmp.df)
+    print qcd_i, '<<<<< events: ', len(inst_tmp.df)  
 
 
 
@@ -122,27 +101,13 @@ for tpl_i in m_c_tpl:
     key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_'+jet_str+'_skimed'+'.h5'#'.pkl'
     inst_tmp            = pkl_df(pth,key_i)
     sgn_dict[sgn_i]     = inst_tmp
-    sgn_df_dict[sgn_i]  = {}
-     
+    sgn_df_dict[sgn_i]  = inst_tmp.df
     #inst_tmp.shift_col_num(-1)
-
+    inst_tmp.set_xs( xs['sgn'] ) # Set cross-sections
     inst_tmp.set_label(1, label_str)
-    tmp_df_dict         = inst_tmp.split(train_val_test_ratio)
-    for tvt_i in train_val_test_ratio:
-        sgn_df_dict[sgn_i][tvt_i] = tmp_df_dict[tvt_i]
-        sgn_df_dict[sgn_i][tvt_i] = sgn_df_dict[sgn_i][tvt_i].assign(weight=0)
-
-        weight_tvt_i                                  = 1. / float( tmpt.read_n(tvt_i) )
-        (sgn_df_dict[sgn_i][tvt_i]).loc[:,['weight']] = weight_tvt_i
-        print weight_tvt_i
- 
-
-# Collect signal samples from sub phase space:
-for sgn_i in sub_mass_ctau:
-    for tvt_i in train_val_test_ratio:
-        sgn_list_dict[tvt_i].append(sgn_df_dict[sgn_i][tvt_i])
-
-
+    # Collect signal samples from sub phase space:
+    sgn_list.append(inst_tmp.df)
+    print sgn_i, '<<<<< events: ', len(inst_tmp.df)
 
 
 
@@ -152,75 +117,53 @@ for sgn_i in sub_mass_ctau:
 # This generates the datasets for training the Model #
 ######################################################
 #"""
-for tvt_i in train_val_test_ratio:
-    # Combine all backgrounds from all HT bins:
-    df_bkg_dict[tvt_i] = pd.concat(qcd_list_dict[tvt_i], ignore_index=True)
-    # Combine all signals from the given subset of phase space:
-    df_sgn_dict[tvt_i] = pd.concat(sgn_list_dict[tvt_i], ignore_index=True)
+# Combine all backgrounds from all HT bins:
+df_bkg_dict = pd.concat(qcd_list, ignore_index=True)
+# Combine all signals from the given subset of phase space:
+df_sgn_dict = pd.concat(sgn_list, ignore_index=True)
 
-    df_sgn_dict[tvt_i]['weight'] = 1. / float( df_sgn_dict[tvt_i].shape[0] )
-
-    print tvt_i+'(bkg): ', str(len(df_bkg_dict[tvt_i]))
-    print tvt_i+'(sgn): ', str(len(df_sgn_dict[tvt_i]))   
-    # Mix and shuffle signal and background:
-    output_fortrain_dict[tvt_i] = pd.concat([df_bkg_dict[tvt_i], df_sgn_dict[tvt_i]], ignore_index=True)
-    output_fortrain_dict[tvt_i] = output_fortrain_dict[tvt_i].iloc[np.random.permutation(len(output_fortrain_dict[tvt_i]))]
+print '(bkg): ', str(len(df_bkg_dict))
+print '(sgn): ', str(len(df_sgn_dict))   
+# Mix and shuffle signal and background:
+output_fortrain_dict = pd.concat([df_bkg_dict, df_sgn_dict], ignore_index=True)
+output_fortrain_dict = output_fortrain_dict.iloc[np.random.permutation(len(output_fortrain_dict))]
 #"""
 
 #####################################################
 # This generates the datasets for testing the Model #
 #####################################################
-#"""
 # Generate all train/val/test samples:
 for sgn_i in mass_ctau:
-    output_fortest_dict[sgn_i]            = {}
-    for tvt_i in train_val_test_ratio:
-        output_fortest_dict[sgn_i][tvt_i] = pd.concat([df_bkg_dict[tvt_i], sgn_df_dict[sgn_i][tvt_i] ], ignore_index=True)
-        output_fortest_dict[sgn_i][tvt_i] = output_fortest_dict[sgn_i][tvt_i].iloc[np.random.permutation(len(output_fortest_dict[sgn_i][tvt_i]))]
-"""
-# Generate only test samples:
-for sgn_i in mass_ctau:
-    output_fortest_dict[sgn_i] = pd.concat([df_bkg_dict['test'], sgn_df_dict[sgn_i]['test'] ], ignore_index=True)
+    output_fortest_dict[sgn_i] = pd.concat([df_bkg_dict, sgn_df_dict[sgn_i] ], ignore_index=True)
     output_fortest_dict[sgn_i] = output_fortest_dict[sgn_i].iloc[np.random.permutation(len(output_fortest_dict[sgn_i]))]
-"""
-
-
-######################################### Debug:
-for i in qcd_cat_list:
-    ttt = qcd_df_dict[i]
-    tt = ttt['val'] 
-    t  = ttt['test']
-    print tt[:2]
-    print t[:2]
-    #print list(t.columns.values)
-for i in sub_mass_ctau:
-    ttt = sgn_df_dict[i]
-    tt = ttt['val']
-    t  = ttt['test']
-    print tt[:2]
-    print t[:2]
 
 
 
+
+
+
+
+
+
+
+#for sgn_i in mass_ctau:    print output_fortest_dict[sgn_i]
 #exit()
 ######################################### Outputs:
-# For training:
-pth_out_train = pth_out + '/' + 'train/'
+#pth_out_train = pth_out + '/' + 'train/'
 pth_out_test  = pth_out + '/' + 'test/'
-act('mkdir '+pth_out_train)
+#act('mkdir '+pth_out_train)
 act('mkdir '+pth_out_test)
-for tvt_i in train_val_test_ratio:
-    output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
-    print tvt_i + ': ' + str(len( output_fortrain_dict[tvt_i] ))
 
+# For training:
+#output_fortrain_dict[tvt_i].to_hdf( pth_out_train + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=False)
+#print str(len( output_fortrain_dict ))
 
 # For testing:
 for sgn_i in mass_ctau:
     pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
     act('mkdir '+pth_out_test_i)
-    for tvt_i in train_val_test_ratio:
-        output_fortest_dict[sgn_i][tvt_i].to_hdf( pth_out_test_i + 'vbf_qcd-'+tvt_i+'-'+'v0_40cs'+'.h5','table',append=True)
-        print sgn_i + '/' + tvt_i + ': ' + str(len( output_fortest_dict[sgn_i][tvt_i] ))
+    output_fortest_dict[sgn_i].to_hdf( pth_out_test_i + 'vbf_qcd_'+v_str+'_'+'.h5','table',append=False)
+    print 'num of events for ' + sgn_i + ': ' + str(len( output_fortest_dict[sgn_i] ))
 
 
 

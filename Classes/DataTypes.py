@@ -103,6 +103,16 @@ class pkl_df:
         self.df_test[weight_str]  = weight['test']
 
 
+    """
+    def CVsplit(self,n_fold):
+        df_dict           = {}
+        df = self.df 
+        for i in range(n_fold):
+            df.iloc[:] 
+
+        self.n_fold      = n_fold
+        return df_dict
+    """
 
 
 
