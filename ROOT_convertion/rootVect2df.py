@@ -9,21 +9,21 @@ from   sklearn.externals import joblib
 # settings      #
 #################
 #-------------------------------------------------------------------------------------------------------------------------
-sgn_on      = True
+sgn_on      = False#True
 bkg_on      = True
 
 bdt_mode    = False
 lola_mode   = True
 
 path        = '/beegfs/desy/user/hezhiyua/backed/fromLisa/fromBrianLLP/'
-Npfc        = 400#2#40
-path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/raw/'
+Npfc        = 40#400#2#40
+path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/raw/'+'/with_mass/'
 versionN_b  = 'TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1'
 versionN_s  = 'TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'
 cut_on      = True
 #newFileName = ''
 drop_nan    = True
-leading_jet = False#True
+leading_jet = True#False#True
 
 
 if leading_jet:    jet_idx = 0 # >>>>>>>>>>>>>> leading jet
@@ -122,6 +122,25 @@ def calc_chf(row):
 
 
 
+def calc_mass(row):
+    tot_m = 0
+    for i in range(Npfc):
+        e_i     = row['E_' +str(i)]
+        px_i    = row['PX_'+str(i)]
+        py_i    = row['PY_'+str(i)]
+        pz_i    = row['PZ_'+str(i)]
+
+        m_2_i   = np.abs(  np.power(e_i,2) + ( np.power(px_i,2) + np.power(py_i,2) + np.power(pz_i,2) )  )
+
+        #m_i     = np.sqrt( m_2_i )  
+        m_i     = m_2_i 
+
+        tot_m  += m_i     
+    return tot_m
+
+
+
+
 
 def colm_gen(in_lst, n_pfc):
     drop_len = len('PFCandidates.')  
@@ -142,7 +161,7 @@ def run_nn_i(inName):
     attr_lst     = ['jetIndex','pt','energy','px','py','pz','isTrack','pdgId']
     pre_str      = 'PFCandidates'    
     cut_pre_str  = 'Jets['+str(jet_idx)+']'
-    cut_attr_lst = ['pt','eta','isGenMatched'    ,'cHadEFrac','nHadEFrac','cHadMulti','nHadMulti','npr']
+    cut_attr_lst = ['pt','eta','isGenMatched'    ,'cHadEFrac','mass']#'nHadEFrac','cHadMulti','nHadMulti','npr']
 
     if 'QCD' in inName:    is_sgn = 0
     else              :    is_sgn = 1
@@ -231,11 +250,17 @@ def run_nn_i(inName):
     xxx                     = df[cut_pre_str+'.'+'cHadEFrac'].reset_index()
     pan['cHadEFrac']        = xxx[cut_pre_str+'.'+'cHadEFrac']
 
+    xxxmass                 = df[cut_pre_str+'.'+'mass'].reset_index()
+    pan['mass']             = xxxmass[cut_pre_str+'.'+'mass']
+    pan['M']                = pan.apply(calc_mass, axis=1)
+
+
     print pan[:8]
     print 'Events: ', len(pan[:])
-    print pan[['CHF','cHadEFrac']]
+    #print pan[['CHF','cHadEFrac']]
+    print pan[['M','mass']]
 
-    #pan.to_hdf(path_out+'/'+inName[:-5]+'_1j_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
+    exit()
     pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_pfc_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
 
 
