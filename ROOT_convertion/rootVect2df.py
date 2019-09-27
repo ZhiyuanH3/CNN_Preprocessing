@@ -9,28 +9,46 @@ from   sklearn.externals import joblib
 # settings      #
 #################
 #-------------------------------------------------------------------------------------------------------------------------
-sgn_on      = False#True
-bkg_on      = True
+sgn_on      = 1
+bkg_on      = 0
+m_list   = [20]
+l_list   = [500] 
+#qcd_list = ['500to700','700to1000','1000to1500','1500to2000','2000toInf']
+qcd_list = ['500to700']
+#qcd_list = ['2000toInf']
+#qcd_list = ['1500to2000']
+#qcd_list = ['1000to1500']
+#qcd_list = ['700to1000']
+sub_folder  = 'out/'
+leading_jet = 1
+#leading_jet = 0
+
+
+#sgn_on      = True#False#True
+#bkg_on      = True
 
 bdt_mode    = False
 lola_mode   = True
 
-path        = '/beegfs/desy/user/hezhiyua/backed/fromLisa/fromBrianLLP/'
-Npfc        = 40#400#2#40
-path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/raw/'+'/with_mass/'
+#path        = '/beegfs/desy/user/hezhiyua/backed/fromLisa/fromBrianLLP/'
+path        = '/beegfs/desy/user/hezhiyua/backed/fromLisa/energyCorrected/'
+Npfc        = 40#400#40
+#path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/raw/'+'with_nPixelHits/'#'/with_mass/'
+path_out    = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/allInOne/raw/'+sub_folder
 versionN_b  = 'TuneCUETP8M1_13TeV-madgraphMLM-pythia8-v1'
 versionN_s  = 'TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC'
 cut_on      = True
 #newFileName = ''
 drop_nan    = True
-leading_jet = True#False#True
+#leading_jet = False#True#False#True
 
 
 if leading_jet:    jet_idx = 0 # >>>>>>>>>>>>>> leading jet
 else          :    jet_idx = 1 # >>>>>>>>>>>>>> the 2nd jet
-qcd_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
-m_list   = [20,30,40,50]
-l_list   = [500,1000,2000,5000] 
+#qcd_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
+
+#m_list   = [20,30,40,50]
+#l_list   = [500,1000,2000,5000] 
 ftr_dict = {'jetIndex': 'jetIndex',
             'pt'      : 'pt', 
             'energy'  : 'E', 
@@ -38,6 +56,11 @@ ftr_dict = {'jetIndex': 'jetIndex',
             'py'      : 'PY',
             'pz'      : 'PZ',
             'isTrack' : 'C',
+
+            'mass'    : 'M',
+
+            'nPixelHits': 'PH',    
+
             'pdgId'   : 'PID'}
 #-------------------------------------------------------------------------------------------------------------------------
 #######################################
@@ -124,18 +147,20 @@ def calc_chf(row):
 
 def calc_mass(row):
     tot_m = 0
+    #tot_M = 0
     for i in range(Npfc):
         e_i     = row['E_' +str(i)]
         px_i    = row['PX_'+str(i)]
         py_i    = row['PY_'+str(i)]
         pz_i    = row['PZ_'+str(i)]
-
-        m_2_i   = np.abs(  np.power(e_i,2) + ( np.power(px_i,2) + np.power(py_i,2) + np.power(pz_i,2) )  )
-
-        #m_i     = np.sqrt( m_2_i )  
-        m_i     = m_2_i 
-
+        ms_i    = row['M_'+str(i)]
+        m_2_i   = np.abs(  np.power(e_i,2) - ( np.power(px_i,2) + np.power(py_i,2) + np.power(pz_i,2) )  )
+        m_i     = np.sqrt( m_2_i )  
+        #m_i     = m_2_i 
         tot_m  += m_i     
+        #tot_M  += ms_i 
+    #print tot_m
+    #print tot_M  
     return tot_m
 
 
@@ -158,10 +183,11 @@ def colm_gen(in_lst, n_pfc):
 def run_nn_i(inName):
 
     print inName
-    attr_lst     = ['jetIndex','pt','energy','px','py','pz','isTrack','pdgId']
+    attr_lst     = ['jetIndex','pt','energy','px','py','pz','isTrack','pdgId','nPixelHits'] #, 'mass']
     pre_str      = 'PFCandidates'    
     cut_pre_str  = 'Jets['+str(jet_idx)+']'
-    cut_attr_lst = ['pt','eta','isGenMatched'    ,'cHadEFrac','mass']#'nHadEFrac','cHadMulti','nHadMulti','npr']
+    bdt_attrs    = ['cHadMulti','nHadMulti','npr','nSelectedTracks','cMulti','nEmEFrac','ecalE','photonEFrac','nHadEFrac','cHadEFrac','mass','pt','energy']
+    cut_attr_lst = ['eta','isGenMatched'] + bdt_attrs
 
     if 'QCD' in inName:    is_sgn = 0
     else              :    is_sgn = 1
@@ -245,23 +271,30 @@ def run_nn_i(inName):
 
     for i in range(Npfc):
         pan['H'+'_'+str(i)] = pan['PID'+'_'+str(i)].apply(pick_h)
+        pan['P'+'_'+str(i)] = pan['PH'+'_'+str(i)].apply(pick_h)        
+ 
+    for i in bdt_attrs:
+        xxx           = df[cut_pre_str+'.'+i].reset_index()
+        pan[i]        = xxx[cut_pre_str+'.'+i]
+
 
     pan['CHF']              = pan.apply(calc_chf, axis=1)
-    xxx                     = df[cut_pre_str+'.'+'cHadEFrac'].reset_index()
-    pan['cHadEFrac']        = xxx[cut_pre_str+'.'+'cHadEFrac']
+    #xxx                     = df[cut_pre_str+'.'+'cHadEFrac'].reset_index()
+    #pan['cHadEFrac']        = xxx[cut_pre_str+'.'+'cHadEFrac']
 
-    xxxmass                 = df[cut_pre_str+'.'+'mass'].reset_index()
-    pan['mass']             = xxxmass[cut_pre_str+'.'+'mass']
-    pan['M']                = pan.apply(calc_mass, axis=1)
+    #xxxmass                 = df[cut_pre_str+'.'+'mass'].reset_index()
+    #pan['mass']             = xxxmass[cut_pre_str+'.'+'mass']
+    #pan['M']                = pan.apply(calc_mass, axis=1)
 
 
     print pan[:8]
     print 'Events: ', len(pan[:])
     #print pan[['CHF','cHadEFrac']]
-    print pan[['M','mass']]
+    #print pan[['M','mass']]
 
-    exit()
+    #exit()
     pan.to_hdf(path_out+'/'+inName[:-5]+'_j'+str(jet_idx)+'_pfc_skimed'+'.h5', key='df', mode='w', dropna=drop_nan)
+    #exit()
 
 
 def run_bdt_i(inName):

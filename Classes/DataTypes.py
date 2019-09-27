@@ -54,10 +54,17 @@ class pkl_df:
             self.df      = joblib.load( self.path + '/' +self.name )  
         
         #self.df      = (self.df).dropna()  
+
+        #self.df      =         
         
         firstColName = (self.df).columns.values[0]
         dropone      = (self.df)[firstColName] != -1
         self.df      = (self.df)[dropone]
+ 
+        dropempty    = (self.df)['E_0'] != 0
+        self.df      = (self.df)[dropempty]
+        self.df      = (self.df)[ (self.df).notnull().any(1) ]        
+
         self.events  = len(self.df)
         self.train_val_test_ratio = {'train':0.6,'val':0.2,'test':0.2}
  

@@ -7,16 +7,30 @@ sys.path.append('./Classes/')
 from Tools             import combi_index
 from DataTypes        import pkl_df
 
-v_str    = 'all_400pfc'
-pth_root = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/'
+drop_nan = False
+
+bkg_on = True
+sgn_on = True
+n_pfc  = 40#400
+
+v_str    = 'all_'+str(n_pfc)+'pfc'
+#pth_root = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/all_in_1/' 
+pth_root = '/beegfs/desy/user/hezhiyua/2bBacked/skimmed/LLP/allInOne/'
+#jet_mode = 'with_mass'
 #jet_mode = '2jets'
-jet_mode = 'leading_jet'
-pth      = pth_root + 'raw/'       + jet_mode + '/' 
+jet_mode = '4jets'
+#jet_mode = 'leading_jet'
+#pth      = pth_root + 'raw/'       + jet_mode + '/' 
+#pth      = pth_root + 'raw/'+'with_nPixelHits/' + jet_mode + '/'
+pth      = pth_root + 'raw/' + jet_mode + '/'
+
 pth_out  = pth_root + 'nn_format/' + jet_mode + '/'
 act('mkdir '+pth_out)
 
 if   jet_mode == '2jets'      :    jet_str = '2j' 
+elif jet_mode == '4jets'      :    jet_str = '4j'
 elif jet_mode == 'leading_jet':    jet_str = 'j0_pfc'
+elif jet_mode == 'with_mass'  :    jet_str = 'j0_pfc'
 
 xs           = { '50to100': 246300000 , '100to200': 28060000 , '200to300': 1710000 , '300to500': 351300 , '500to700': 31630 , '700to1000': 6802 , '1000to1500': 1206 , '1500to2000': 120.4 , '2000toInf': 25.25 , 'sgn': 3.782 }
 qcd_cat_list = ['100to200','200to300','300to500','500to700','700to1000','1000to1500','1500to2000','2000toInf']
@@ -93,21 +107,21 @@ for i in sub_combi:
 
 
 
-
-for tpl_i in m_c_tpl:
-    m_i = tpl_i[0]
-    l_i = tpl_i[1] 
-    sgn_i = m_i + '_' + l_i
-    key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_'+jet_str+'_skimed'+'.h5'#'.pkl'
-    inst_tmp            = pkl_df(pth,key_i)
-    sgn_dict[sgn_i]     = inst_tmp
-    sgn_df_dict[sgn_i]  = inst_tmp.df
-    #inst_tmp.shift_col_num(-1)
-    inst_tmp.set_xs( xs['sgn'] ) # Set cross-sections
-    inst_tmp.set_label(1, label_str)
-    # Collect signal samples from sub phase space:
-    sgn_list.append(inst_tmp.df)
-    print sgn_i, '<<<<< events: ', len(inst_tmp.df)
+if sgn_on:
+    for tpl_i in m_c_tpl:
+        m_i = tpl_i[0]
+        l_i = tpl_i[1] 
+        sgn_i = m_i + '_' + l_i
+        key_i = 'VBFH_HToSSTobbbb_MH-125_MS-'+m_i+'_ctauS-'+l_i+'_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC_'+jet_str+'_skimed'+'.h5'#'.pkl'
+        inst_tmp            = pkl_df(pth,key_i)
+        sgn_dict[sgn_i]     = inst_tmp
+        sgn_df_dict[sgn_i]  = inst_tmp.df
+        #inst_tmp.shift_col_num(-1)
+        inst_tmp.set_xs( xs['sgn'] ) # Set cross-sections
+        inst_tmp.set_label(1, label_str)
+        # Collect signal samples from sub phase space:
+        sgn_list.append(inst_tmp.df)
+        print sgn_i, '<<<<< events: ', len(inst_tmp.df)
 
 
 
@@ -119,11 +133,13 @@ for tpl_i in m_c_tpl:
 #"""
 # Combine all backgrounds from all HT bins:
 df_bkg_dict = pd.concat(qcd_list, ignore_index=True)
-# Combine all signals from the given subset of phase space:
-df_sgn_dict = pd.concat(sgn_list, ignore_index=True)
-
 print '(bkg): ', str(len(df_bkg_dict))
-print '(sgn): ', str(len(df_sgn_dict))   
+
+if sgn_on:
+    # Combine all signals from the given subset of phase space:
+    df_sgn_dict = pd.concat(sgn_list, ignore_index=True)
+    print '(sgn): ', str(len(df_sgn_dict))   
+
 # Mix and shuffle signal and background:
 #output_fortrain_dict = pd.concat([df_bkg_dict, df_sgn_dict], ignore_index=True)
 #output_fortrain_dict = output_fortrain_dict.iloc[np.random.permutation(len(output_fortrain_dict))]
@@ -160,14 +176,16 @@ act('mkdir '+pth_out_test)
 #print str(len( output_fortrain_dict ))
 
 # For testing:
-df_bkg_dict.to_hdf(pth_out+'qcd_'+v_str+'.h5', key='df', mode='w', dropna=False)
+if bkg_on:
+    df_bkg_dict.to_hdf(pth_out+'qcd_'+v_str+'.h5', key='df', mode='w', dropna=drop_nan)
 
-for sgn_i in mass_ctau:
-    pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
-    act('mkdir '+pth_out_test_i)
-    #output_fortest_dict[sgn_i].to_hdf(pth_out_test_i + 'vbf_qcd_'+v_str+'.h5','table',append=False)
-    sgn_df_dict[sgn_i].to_hdf(pth_out_test_i+'vbf_'+sgn_i+'_'+v_str+'.h5', key='df', mode='w', dropna=False)
-    print 'num of events for ' + sgn_i + ': ' + str(len( sgn_df_dict[sgn_i] ))
+if sgn_on:
+    for sgn_i in mass_ctau:
+        pth_out_test_i  = pth_out_test + '/' + sgn_i + '/'
+        act('mkdir '+pth_out_test_i)
+        #output_fortest_dict[sgn_i].to_hdf(pth_out_test_i + 'vbf_qcd_'+v_str+'.h5','table',append=False)
+        sgn_df_dict[sgn_i].to_hdf(pth_out_test_i+'vbf_'+sgn_i+'_'+v_str+'.h5', key='df', mode='w', dropna=drop_nan)
+        print 'num of events for ' + sgn_i + ': ' + str(len( sgn_df_dict[sgn_i] ))
 
 
 
